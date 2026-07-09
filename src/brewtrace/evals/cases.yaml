@@ -1,0 +1,179 @@
+# BrewTrace evaluation cases.
+#
+# Each case: free-text brew description, the defect the parser should find,
+# and the set of (variable, direction) adjustments that count as a pass.
+# The deterministic pipeline must score 100% on these by construction —
+# a failure means either the rule table or the case itself is wrong.
+
+# --- sour_thin ---------------------------------------------------------------
+- id: sour-thin-v60-basic
+  input: "16g/250g V60, 94C, 3:45 drawdown, tastes sour and thin"
+  expected_defect: sour_thin
+  acceptable:
+    - { variable: grind, direction: finer }
+  notes: "3:45 is in range for V60; finer grind is the first-choice fix"
+
+- id: sour-thin-kalita
+  input: "20g coffee / 310g water kalita, 93C, 4:00, sour and thin"
+  expected_defect: sour_thin
+  acceptable:
+    - { variable: grind, direction: finer }
+
+- id: sour-thin-no-timing
+  input: "16g/250g v60 at 94C, thin and sour"
+  expected_defect: sour_thin
+  acceptable:
+    - { variable: grind, direction: finer }
+  notes: "missing drawdown: recommendation stands but confidence drops to medium"
+
+# --- sour_thin guard interactions (the showcase) -----------------------------
+- id: sour-thin-stalled-flips-to-temp
+  input: "16g/250g V60, 92C, 5:00 drawdown, sour and thin"
+  expected_defect: sour_thin
+  acceptable:
+    - { variable: temperature, direction: increase }
+  notes: "drawdown 5:00 is slow/stalled; finer grind is contraindicated"
+
+- id: sour-thin-stalled-temp-maxed-falls-to-bloom
+  input: "16g/250g V60, 96C, 5:15 drawdown, sour and thin"
+  expected_defect: sour_thin
+  acceptable:
+    - { variable: bloom, direction: increase }
+  notes: "both grind (stall) and temperature (ceiling) are contraindicated"
+
+# --- sour --------------------------------------------------------------------
+- id: sour-v60
+  input: "15g/250g v60, 94C, 3:00, came out sour"
+  expected_defect: sour
+  acceptable:
+    - { variable: grind, direction: finer }
+
+- id: sour-fast-drawdown
+  input: "16g/250g v60, 94C, 1:45 drawdown, sour"
+  expected_defect: sour
+  acceptable:
+    - { variable: grind, direction: finer }
+  notes: "fast drawdown + sour: grind finer via the fast-drawdown rules"
+
+- id: sour-clever
+  input: "18g/280g clever, 92C, 1:30 drainage, tart and sour"
+  expected_defect: sour
+  acceptable:
+    - { variable: grind, direction: finer }
+
+# --- bitter_astringent -------------------------------------------------------
+- id: bitter-astringent-v60
+  input: "16g/250g v60, 95C, 3:30, bitter with a drying astringent finish"
+  expected_defect: bitter_astringent
+  acceptable:
+    - { variable: grind, direction: coarser }
+
+- id: astringent-only-kalita
+  input: "21g/320g kalita, 94C, 4:10, really astringent"
+  expected_defect: bitter_astringent
+  acceptable:
+    - { variable: grind, direction: coarser }
+
+# --- bitter ------------------------------------------------------------------
+- id: bitter-v60
+  input: "16g/250g v60, 96C, 3:15, harsh and bitter"
+  expected_defect: bitter
+  acceptable:
+    - { variable: grind, direction: coarser }
+
+- id: bitter-at-temp-floor
+  input: "16g/250g v60, 88C, 3:15, still bitter"
+  expected_defect: bitter
+  acceptable:
+    - { variable: grind, direction: coarser }
+  notes: "temp already at floor: coarser grind still first; temp must NOT be recommended"
+
+- id: bitter-with-stall
+  input: "16g/250g v60, 94C, 5:30 drawdown, bitter"
+  expected_defect: bitter
+  acceptable:
+    - { variable: grind, direction: coarser }
+  notes: "stall + bitter: the stall is the story, coarser fixes both"
+
+# --- weak (balanced) ---------------------------------------------------------
+- id: weak-balanced-v60
+  input: "15g/260g v60, 94C, 3:00, weak and watery but nothing tastes bad"
+  expected_defect: weak
+  acceptable:
+    - { variable: ratio, direction: decrease }
+  notes: "strength problem, not extraction: must NOT touch grind"
+
+- id: weak-kalita
+  input: "18g/300g kalita, 93C, 3:30, watery"
+  expected_defect: weak
+  acceptable:
+    - { variable: ratio, direction: decrease }
+
+- id: weak-fast-drawdown
+  input: "16g/250g v60, 94C, 2:00 drawdown, weak"
+  expected_defect: weak
+  acceptable:
+    - { variable: grind, direction: finer }
+  notes: "fast drawdown + weak: channeling, fast-drawdown rules take over"
+
+# --- strong_muddy ------------------------------------------------------------
+- id: muddy-v60
+  input: "18g/250g v60, 94C, 3:45, heavy and muddy"
+  expected_defect: strong_muddy
+  acceptable:
+    - { variable: ratio, direction: increase }
+
+- id: muddy-clever
+  input: "20g/280g clever, 93C, muddled and too strong"
+  expected_defect: strong_muddy
+  acceptable:
+    - { variable: ratio, direction: increase }
+
+# --- hollow ------------------------------------------------------------------
+- id: hollow-v60
+  input: "16g/250g v60, 94C, 3:00, flat and hollow, no sweetness"
+  expected_defect: hollow
+  acceptable:
+    - { variable: pour_technique, direction: more_even }
+
+- id: hollow-kalita
+  input: "20g/310g kalita, 94C, 3:45, muted mid-palate, lacks sweetness"
+  expected_defect: hollow
+  acceptable:
+    - { variable: pour_technique, direction: more_even }
+
+# --- balanced ----------------------------------------------------------------
+- id: balanced-keep
+  input: "16g/250g v60, 94C, 3:00, tastes great"
+  expected_defect: balanced
+  acceptable:
+    - { variable: none, direction: keep }
+  notes: "a balanced brew gets no change: repeat for a stable baseline"
+
+# --- drawdown-only cases (no taste defect) -----------------------------------
+- id: stalled-no-defect
+  input: "16g/250g v60, 94C, 5:30 drawdown"
+  expected_defect: null
+  acceptable:
+    - { variable: grind, direction: coarser }
+
+- id: fast-no-defect
+  input: "16g/250g v60, 94C, 1:50 drawdown"
+  expected_defect: null
+  acceptable:
+    - { variable: grind, direction: finer }
+
+# --- partial / degenerate input ----------------------------------------------
+- id: no-defect-no-timing
+  input: "16g/250g v60 at 94C"
+  expected_defect: null
+  acceptable:
+    - { variable: none, direction: keep }
+  notes: "nothing to diagnose: ask for more detail, low confidence"
+
+- id: sour-minimal-info
+  input: "v60 tastes sour"
+  expected_defect: sour
+  acceptable:
+    - { variable: grind, direction: finer }
+  notes: "defect only, no measurements: recommendation stands at medium confidence"
