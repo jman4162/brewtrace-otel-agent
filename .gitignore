@@ -1,0 +1,21 @@
+# Local-only notes (planning docs, scratch)
+*.local.md
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+dist/
+
+# App data
+data/
+*.db
+
+# Environment
+.env
+
+# OS
+.DS_Store

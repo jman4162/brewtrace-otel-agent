@@ -1,0 +1,46 @@
+[project]
+name = "brewtrace"
+version = "0.1.0"
+description = "Fully local LLM coffee-brewing agent traced end-to-end with OpenTelemetry (Strands Agents + Ollama + Jaeger/Grafana)"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "John Hodge" }]
+dependencies = [
+    "strands-agents[ollama,otel]==1.46.0",
+    "pydantic>=2.7",
+    "pyyaml>=6.0",
+    # telemetry.py imports these directly; declared explicitly rather than
+    # relying on the strands-agents[otel] extra to provide them transitively
+    "opentelemetry-sdk>=1.25",
+    "opentelemetry-exporter-otlp-proto-http>=1.25",
+]
+
+[project.optional-dependencies]
+judge = ["strands-agents-evals"]
+
+[project.scripts]
+brewtrace = "brewtrace.app:main"
+
+[dependency-groups]
+dev = ["pytest>=8.0", "ruff>=0.5"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/brewtrace"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# The default test run never touches an LLM; opt in with `pytest -m ollama`.
+addopts = "-m 'not ollama'"
+markers = ["ollama: requires a running Ollama server with a tool-capable model"]
