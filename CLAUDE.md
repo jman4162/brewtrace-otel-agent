@@ -61,6 +61,12 @@ same file.
   (`gen_ai.usage.prompt_tokens` and `gen_ai.usage.input_tokens`), and legacy
   `gen_ai.system`. Span names are current (`invoke_agent`, `chat`, `execute_tool <name>`).
   GenAI semconv is Development-status; docs/architecture.md documents observed behavior.
+- Strands METRICS are framework-named (`strands_event_loop_input_tokens`,
+  `strands_tool_call_count`, …), NOT the spec's `gen_ai.client.*` — verified in
+  Prometheus. Don't "fix" docs to claim gen_ai.client metrics exist.
+- Live eval baseline (qwen3-8B, July 2026): 20/25. Failure buckets: extraction maps
+  "more coffee" → ratio/increase (wrong direction), priority drift, guessing on
+  missing data.
 - Custom attributes go in `brew.*` / `taste.*` / `eval.*`, never `gen_ai.*`.
 - `Agent.structured_output()` is deprecated; use `agent(prompt, structured_output_model=M)`
   → `result.structured_output`.

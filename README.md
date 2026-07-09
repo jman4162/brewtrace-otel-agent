@@ -85,8 +85,11 @@ uv run python -m brewtrace.evals.run_evals --agent    # live agent, threshold 80
 ```
 
 Agent-mode eval runs are traced with `eval.case_id` and `eval.passed` attributes, so
-every failure links to the full trace of what the model actually did. An optional
-LLM-as-judge pass (local Ollama judge, no Bedrock) scores rationale quality:
+every failure links to the full trace of what the model actually did. Measured with
+qwen3-8B (July 2026): **20/25** — and the traces sort the five failures into
+extraction-schema mapping errors, priority drift, and guessing on missing data (see
+[docs/tutorial.md](docs/tutorial.md)). An optional LLM-as-judge pass (local Ollama
+judge, no Bedrock) scores rationale quality:
 `uv sync --extra judge && uv run python -m brewtrace.evals.judge`.
 
 ## Metrics
@@ -97,10 +100,14 @@ uv run brewtrace --metrics "16g/250g V60, 94C, 3:45, sour and thin"
 # Grafana at http://localhost:3000 (admin/admin) → Explore → Prometheus
 ```
 
-Strands emits the GenAI client metrics (`gen_ai.client.token.usage`,
-`gen_ai.client.operation.duration`); BrewTrace adds `brew.recommendations` (counter,
-by recommended variable) and `brew.request.duration` (histogram). Jaeger stores traces
-only — the `lgtm` profile exists so the metrics have somewhere to land.
+Strands emits its own instruments — `strands_event_loop_input_tokens` /
+`output_tokens` histograms, `strands_tool_call_count` / `success` / `error` counters,
+per-tool durations, time-to-first-token — not the GenAI semconv `gen_ai.client.*`
+metric names the spec defines (verified against strands-agents 1.46.0; see
+[docs/architecture.md](docs/architecture.md)). BrewTrace adds `brew.recommendations`
+(counter, by recommended variable) and `brew.request.duration` (histogram). Jaeger
+stores traces only — the `lgtm` profile exists so the metrics have somewhere to land.
+If port 3000 is taken on your machine: `GRAFANA_PORT=3001 docker compose --profile lgtm up -d`.
 
 ## Use your real brew history (Beanbench)
 

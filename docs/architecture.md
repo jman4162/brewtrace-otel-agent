@@ -69,8 +69,15 @@ strands-agents 1.46.0:
   *and* `gen_ai.usage.input_tokens` (same value), likewise completion/output.
 - Span names follow the current conventions: `invoke_agent`, `chat`,
   `execute_tool <name>`.
+- **Metrics do not follow the GenAI conventions at all.** The spec defines
+  `gen_ai.client.token.usage` and `gen_ai.client.operation.duration`; what arrives in
+  Prometheus is `strands_event_loop_input_tokens_token_*`,
+  `strands_event_loop_cycle_duration_seconds_*`, `strands_tool_call_count_Count_total`,
+  `strands_tool_duration_seconds_*`, `strands_model_time_to_first_token_milliseconds_*`,
+  and friends.
 
-Write dashboard queries against both name generations, or pin your strands version.
+Write dashboard queries against both span-attribute name generations, build metric
+dashboards on the `strands_*` names, or pin your strands version.
 `OTEL_SEMCONV_STABILITY_OPT_IN=gen_ai_latest_experimental` opts into newer behavior
 where supported.
 

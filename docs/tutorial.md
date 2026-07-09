@@ -196,14 +196,35 @@ That loop — eval failure to trace to root cause — is the entire reason to in
 an agent, and it works the same way whether the backend is this local Jaeger or a
 vendor's.
 
+The actual numbers, qwen3-8B, July 2026: **20/25 (80%)**. The five failures sort into
+three buckets, each visible in its trace:
+
+1. **Direction semantics** (2 cases): for "weak but balanced" the agent correctly said
+   *use more coffee*, but the structured extraction mapped that to `ratio/increase` —
+   more coffee means a *lower* water:coffee ratio. The recommendation was right; the
+   schema mapping lost it.
+2. **Priority drift** (1 case): for a muddy cup it chose the rule table's second-choice
+   adjustment (coarser grind) over the first (more water). Defensible, but off-script.
+3. **Substituted judgment** (2 cases): with missing data, where the rule engine asks
+   for more information, the model guessed anyway.
+
+Each bucket suggests a different fix (better extraction prompt, stronger tool-result
+adherence, explicit "say you don't know" instruction) — which you only know because
+the traces separate them. A bare 80% score would tell you none of this.
+
 ## Metrics
 
 Traces answer "what happened in this request"; metrics answer "what happens usually."
-Enable the meter and Strands emits the GenAI client metrics
-(`gen_ai.client.token.usage`, `gen_ai.client.operation.duration`); BrewTrace adds a
-counter of recommendations by variable and an end-to-end latency histogram. Jaeger
-stores traces only, so the compose file has a second profile with Grafana's
-single-container LGTM stack (Collector + Prometheus + Tempo + Loki + Grafana):
+Enable the meter and Strands emits metric instruments — but here's another
+spec-vs-reality gap worth knowing before you build dashboards: the GenAI semconv
+defines `gen_ai.client.token.usage` and `gen_ai.client.operation.duration`, and what
+actually lands in Prometheus from strands 1.46 is `strands_event_loop_input_tokens`,
+`strands_event_loop_cycle_duration_seconds`, `strands_tool_call_count`,
+`strands_model_time_to_first_token_milliseconds`, and friends. Framework-native names,
+not the spec's. BrewTrace adds a counter of recommendations by variable and an
+end-to-end latency histogram. Jaeger stores traces only, so the compose file has a
+second profile with Grafana's single-container LGTM stack (Collector + Prometheus +
+Tempo + Loki + Grafana):
 
 ```bash
 docker compose --profile lgtm up -d

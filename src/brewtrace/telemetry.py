@@ -59,8 +59,9 @@ def setup_telemetry(*, otlp: bool = True, console: bool = False, metrics: bool =
 def record_recommendation(variable: str, duration_s: float) -> None:
     """Record the two custom metrics for one completed diagnosis.
 
-    Strands already emits the GenAI client metrics (gen_ai.client.token.usage,
-    gen_ai.client.operation.duration) when metrics are enabled, so BrewTrace
+    Strands already emits its own instruments when metrics are enabled
+    (strands.event_loop.* token/cycle histograms, strands.tool.* call and
+    error counts — not the GenAI semconv gen_ai.client.* names), so BrewTrace
     adds only what those can't express: which brew variable was recommended,
     and whole-request latency including the extraction pass.
     """
