@@ -1,13 +1,30 @@
-# Observability backend for BrewTrace.
+# Observability backends for BrewTrace. Run exactly one profile at a time —
+# both bind the OTLP ports 4317/4318, so the app config never changes:
+#
+#   docker compose --profile jaeger up -d   # traces only, Jaeger UI :16686
+#   docker compose --profile lgtm up -d     # traces + metrics + logs, Grafana :3000
 #
 # Jaeger v2 is built on the OpenTelemetry Collector and ingests OTLP directly
 # on 4317 (gRPC) and 4318 (HTTP) — no separate collector service needed,
-# unlike older Jaeger v1 tutorials.
+# unlike older Jaeger v1 tutorials. Jaeger stores traces only; use the lgtm
+# profile when you also export metrics (--metrics).
 services:
   jaeger:
+    profiles: ["jaeger"]
     image: jaegertracing/jaeger:2.19.0
     container_name: brewtrace-jaeger
     ports:
       - "16686:16686" # Jaeger UI
+      - "4317:4317"   # OTLP gRPC
+      - "4318:4318"   # OTLP HTTP
+
+  # Single-container Grafana LGTM stack: OTel Collector + Prometheus (metrics)
+  # + Tempo (traces) + Loki (logs) + Grafana. Intended for development/demo.
+  lgtm:
+    profiles: ["lgtm"]
+    image: grafana/otel-lgtm:latest
+    container_name: brewtrace-lgtm
+    ports:
+      - "3000:3000"   # Grafana UI (admin/admin)
       - "4317:4317"   # OTLP gRPC
       - "4318:4318"   # OTLP HTTP

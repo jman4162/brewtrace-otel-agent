@@ -22,13 +22,14 @@ import os
 from collections.abc import Iterator
 from contextlib import contextmanager
 
-from opentelemetry import trace
+from opentelemetry import metrics, trace
 
 from brewtrace.models import BrewLog
 
 DEFAULT_OTLP_ENDPOINT = "http://localhost:4318"
 
 _configured = False
+_instruments: dict | None = None
 
 
 def setup_telemetry(*, otlp: bool = True, console: bool = False, metrics: bool = False) -> None:
@@ -53,6 +54,33 @@ def setup_telemetry(*, otlp: bool = True, console: bool = False, metrics: bool =
     if metrics:
         strands_telemetry.setup_meter(enable_otlp_exporter=True)
     _configured = True
+
+
+def record_recommendation(variable: str, duration_s: float) -> None:
+    """Record the two custom metrics for one completed diagnosis.
+
+    Strands already emits the GenAI client metrics (gen_ai.client.token.usage,
+    gen_ai.client.operation.duration) when metrics are enabled, so BrewTrace
+    adds only what those can't express: which brew variable was recommended,
+    and whole-request latency including the extraction pass.
+    """
+    global _instruments
+    if _instruments is None:
+        meter = metrics.get_meter("brewtrace")
+        _instruments = {
+            "recommendations": meter.create_counter(
+                "brew.recommendations",
+                unit="{recommendation}",
+                description="Diagnoses completed, by recommended variable",
+            ),
+            "duration": meter.create_histogram(
+                "brew.request.duration",
+                unit="s",
+                description="End-to-end diagnosis latency, including structured extraction",
+            ),
+        }
+    _instruments["recommendations"].add(1, {"brew.variable": variable})
+    _instruments["duration"].record(duration_s, {"brew.variable": variable})
 
 
 @contextmanager

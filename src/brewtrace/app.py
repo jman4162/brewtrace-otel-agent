@@ -83,8 +83,10 @@ def run_agent(
     extra_attributes: dict | None = None,
 ) -> int:
     # Imported lazily so --no-llm never needs strands/ollama importable.
+    import time
+
     from brewtrace.agent import build_agent, run_diagnosis
-    from brewtrace.telemetry import brew_request_span, setup_telemetry
+    from brewtrace.telemetry import brew_request_span, record_recommendation, setup_telemetry
 
     if telemetry:
         setup_telemetry(otlp=True, console=console_traces, metrics=metrics)
@@ -94,6 +96,7 @@ def run_agent(
     print()
 
     agent = build_agent(model_id=model_id, host=host)
+    started = time.perf_counter()
     if telemetry:
         with brew_request_span(brew, extra=extra_attributes):
             advice, result = run_diagnosis(agent, brew_text)
@@ -102,6 +105,8 @@ def run_agent(
     if advice is None:
         print("The model did not return structured advice; try again or use --no-llm.")
         return 1
+    if telemetry and metrics:
+        record_recommendation(advice.variable.value, time.perf_counter() - started)
     print(_render_advice(advice))
     print()
     print(_render_metrics(result.metrics))
