@@ -41,6 +41,9 @@ select = ["E", "F", "I", "UP", "B", "SIM"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+# src on pythonpath directly: tests must not depend on the editable-install .pth
+# (macOS uv occasionally writes it with the UF_HIDDEN flag, which Python skips).
+pythonpath = ["src"]
 # The default test run never touches an LLM; opt in with `pytest -m ollama`.
 addopts = "-m 'not ollama'"
 markers = ["ollama: requires a running Ollama server with a tool-capable model"]
