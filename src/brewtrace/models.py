@@ -147,6 +147,14 @@ _GRIND_SETTING = re.compile(
 )
 
 
+def infer_defect(text: str) -> TasteDefect | None:
+    """Map free-text taste language onto a defect, or None if nothing matches."""
+    for pattern, defect in _DEFECT_KEYWORDS:
+        if pattern.search(text):
+            return defect
+    return None
+
+
 def parse_brew_log(text: str) -> BrewLog:
     """Parse a free-text brew description into a BrewLog.
 
@@ -186,11 +194,7 @@ def parse_brew_log(text: str) -> BrewLog:
     if time_match:
         drawdown_s = int(time_match.group(1)) * 60 + int(time_match.group(2))
 
-    defect = None
-    for pattern, d in _DEFECT_KEYWORDS:
-        if pattern.search(text):
-            defect = d
-            break
+    defect = infer_defect(text)
 
     grind_match = _GRIND_SETTING.search(text)
     grind_setting = grind_match.group(1) if grind_match else None
