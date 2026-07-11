@@ -138,8 +138,7 @@ DEFECT_RULES: dict[TasteDefect, list[Rule]] = {
                 Variable.AGITATION,
                 Direction.GENTLER,
                 "gentler pours, no late stirring",
-                "Astringency tracks fines migration; less agitation keeps fines out "
-                "of the cup.",
+                "Astringency tracks fines migration; less agitation keeps fines out of the cup.",
             ),
         ),
     ],
@@ -229,8 +228,7 @@ DEFECT_RULES: dict[TasteDefect, list[Rule]] = {
                 Variable.NONE,
                 Direction.KEEP,
                 "change nothing",
-                "The brew is balanced; repeat it and change nothing so you have a "
-                "stable baseline.",
+                "The brew is balanced; repeat it and change nothing so you have a stable baseline.",
             ),
         ),
     ],
@@ -252,8 +250,7 @@ STALLED_RULES: list[Rule] = [
             Variable.POUR_TECHNIQUE,
             Direction.GENTLER,
             "fewer, gentler pour pulses",
-            "Aggressive pouring drives fines into the filter; gentler pours keep "
-            "the bed open.",
+            "Aggressive pouring drives fines into the filter; gentler pours keep the bed open.",
         ),
     ),
 ]

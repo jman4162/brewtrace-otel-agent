@@ -44,9 +44,7 @@ def score(variable: Variable, direction: Direction, case: EvalCase) -> EvalResul
     The one-variable invariant is structural: both the deterministic pipeline
     and the agent's structured output can only express a single adjustment.
     """
-    accepted = any(
-        variable == a.variable and direction == a.direction for a in case.acceptable
-    )
+    accepted = any(variable == a.variable and direction == a.direction for a in case.acceptable)
     wanted = " or ".join(f"{a.variable.value}/{a.direction.value}" for a in case.acceptable)
     return EvalResult(
         case_id=case.id,

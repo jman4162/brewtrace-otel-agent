@@ -49,9 +49,7 @@ def _entry_to_brew(entry: dict) -> BrewLog | None:
     if method is None:
         return None
 
-    notes_text = " ".join(
-        str(entry.get(key) or "") for key in ("tastingNotes", "notes")
-    ).strip()
+    notes_text = " ".join(str(entry.get(key) or "") for key in ("tastingNotes", "notes")).strip()
 
     grind = entry.get("grindSetting")
     return BrewLog(

@@ -51,10 +51,7 @@ def main(argv: list[str] | None = None) -> int:
     judge_model = OllamaModel(host=args.host, model_id=args.model, temperature=0.0)
     evaluator = OutputEvaluator(rubric=RUBRIC, model=judge_model, include_inputs=True)
 
-    cases = [
-        Case(name=c.id, input=c.input)
-        for c in load_cases()[: args.limit]
-    ]
+    cases = [Case(name=c.id, input=c.input) for c in load_cases()[: args.limit]]
 
     def task(case):
         agent = build_agent(model_id=args.agent_model, host=args.host)

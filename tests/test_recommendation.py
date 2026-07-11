@@ -80,9 +80,7 @@ def test_sour_thin_with_stall_flips_to_temperature():
     assert rec.adjustment.variable == Variable.TEMPERATURE
     assert rec.adjustment.direction == Direction.INCREASE
     # The skipped grind rule must be visible as an alternative with the reason.
-    assert any(
-        a.variable == Variable.GRIND and "skipped" in a.rationale for a in rec.alternatives
-    )
+    assert any(a.variable == Variable.GRIND and "skipped" in a.rationale for a in rec.alternatives)
 
 
 def test_sour_thin_stalled_and_temp_at_ceiling_falls_to_bloom():
