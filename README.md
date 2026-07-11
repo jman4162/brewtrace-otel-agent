@@ -1,5 +1,10 @@
 # BrewTrace: an observable local coffee-brewing agent
 
+[![CI](https://github.com/jman4162/brewtrace-otel-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/jman4162/brewtrace-otel-agent/actions/workflows/ci.yml)
+![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+![Local only](https://img.shields.io/badge/cloud%20APIs-none-brightgreen)
+
 A fully local LLM coffee assistant where every tool call, retrieval step, and model
 response is traced with OpenTelemetry. Built with **Strands Agents + Ollama**; traces
 viewed in **Jaeger** or **Grafana**. No cloud APIs, no SaaS, no API keys.
@@ -73,6 +78,12 @@ queryable no matter what the model did: filter `taste.primary_defect=sour_thin` 
 [docs/architecture.md](docs/architecture.md) for the design and the GenAI
 semantic-conventions notes (strands 1.46 emits both legacy and current token
 attribute names — worth reading before you build dashboards).
+
+For trace analysis beyond the UI — latency breakdown, per-call token accounting,
+tool-call inspection via the Jaeger HTTP API —
+[notebooks/trace_walkthrough.ipynb](notebooks/trace_walkthrough.ipynb) walks one real
+trace programmatically (committed with executed outputs; the answer to "where did the
+time go" is: 99%+ model inference, ~10ms tools).
 
 ## Evals
 
