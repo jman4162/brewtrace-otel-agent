@@ -22,6 +22,11 @@ other half: instrumenting the full agent loop so you can inspect which tools wer
 called, what context was retrieved, how long each step took, and whether the
 recommendation was reasonable.
 
+![Jaeger trace of one brewtrace.request: invoke_agent, event-loop cycles, a chat span, four millisecond-scale execute_tool spans, and a second invoke_agent for structured-output extraction](screenshots/jaeger-trace.png)
+
+Full walkthrough with the design decisions and eval results:
+[Tracing a local LLM agent end to end](https://john-hodge.com/blog/strands-ollama-opentelemetry-local-agent-tracing/).
+
 ## What this teaches
 
 - Building a local agent with the Strands Agents SDK
