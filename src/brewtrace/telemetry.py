@@ -84,6 +84,21 @@ def record_recommendation(variable: str, duration_s: float) -> None:
     _instruments["duration"].record(duration_s, {"brew.variable": variable})
 
 
+_eval_counter = None
+
+
+def record_eval_result(model: str, passed: bool) -> None:
+    """Count eval outcomes by model — feeds the Grafana pass-rate panel."""
+    global _eval_counter
+    if _eval_counter is None:
+        _eval_counter = metrics.get_meter("brewtrace").create_counter(
+            "brew.eval.results",
+            unit="{case}",
+            description="Eval case outcomes, by model and pass/fail",
+        )
+    _eval_counter.add(1, {"eval.model": model, "eval.passed": passed})
+
+
 @contextmanager
 def brew_request_span(brew: BrewLog, extra: dict | None = None) -> Iterator[trace.Span]:
     """Parent span for one diagnosis request, carrying the parsed brew data.
