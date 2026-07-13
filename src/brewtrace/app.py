@@ -73,6 +73,23 @@ def run_deterministic(brew_text: str) -> int:
     return 0
 
 
+def _log_advice(brew, advice) -> None:
+    """Persist a completed diagnosis to the experiment database."""
+    from brewtrace.models import Adjustment, Recommendation
+    from brewtrace.tools.experiment_log import log_experiment
+
+    rec = Recommendation(
+        adjustment=Adjustment(
+            variable=advice.variable,
+            direction=advice.direction,
+            magnitude=advice.magnitude,
+            rationale=advice.rationale,
+        ),
+        confidence="medium",  # agent output; the deterministic scorer decides quality
+    )
+    log_experiment(brew, rec)
+
+
 def run_agent(
     brew_text: str,
     model_id: str,
@@ -80,6 +97,7 @@ def run_agent(
     telemetry: bool = True,
     console_traces: bool = False,
     metrics: bool = False,
+    log: bool = True,
     extra_attributes: dict | None = None,
 ) -> int:
     # Imported lazily so --no-llm never needs strands/ollama importable.
@@ -107,6 +125,8 @@ def run_agent(
         return 1
     if telemetry and metrics:
         record_recommendation(advice.variable.value, time.perf_counter() - started)
+    if log:
+        _log_advice(brew, advice)
     print(_render_advice(advice))
     print()
     print(_render_metrics(result.metrics))
@@ -165,6 +185,7 @@ def run_beanbench(args) -> int:
                     telemetry=not args.no_telemetry,
                     console_traces=args.console_traces,
                     metrics=args.metrics,
+                    log=not args.no_log,
                     extra_attributes={"brew.source": "beanbench"},
                 ),
             )
@@ -192,6 +213,9 @@ def main(argv: list[str] | None = None) -> int:
         help="also print spans to stdout (no docker needed)",
     )
     parser.add_argument("--metrics", action="store_true", help="also export OTel metrics")
+    parser.add_argument(
+        "--no-log", action="store_true", help="don't save the diagnosis to data/brewtrace.db"
+    )
     beanbench = parser.add_argument_group("Beanbench import")
     beanbench.add_argument(
         "--from-beanbench", metavar="EXPORT.json", help="diagnose brews from a Beanbench export"
@@ -220,6 +244,7 @@ def main(argv: list[str] | None = None) -> int:
         telemetry=not args.no_telemetry,
         console_traces=args.console_traces,
         metrics=args.metrics,
+        log=not args.no_log,
     )
 
 

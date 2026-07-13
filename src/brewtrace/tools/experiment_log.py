@@ -1,4 +1,9 @@
-"""SQLite experiment logger — stdlib only, database in data/brewtrace.db."""
+"""SQLite experiment logger — stdlib only, database in data/brewtrace.db.
+
+Deliberately NOT an agent tool: whether a diagnosis gets logged is an
+application decision, not a model decision, so app.py calls log_experiment()
+directly after each successful agent run (disable with --no-log).
+"""
 
 from __future__ import annotations
 
@@ -6,8 +11,6 @@ import json
 import sqlite3
 from datetime import datetime, timezone
 from pathlib import Path
-
-from strands import tool
 
 from brewtrace.models import BrewLog, Recommendation
 
@@ -64,37 +67,3 @@ def recent_experiments(limit: int = 5, db_path: Path = DEFAULT_DB) -> list[dict]
         record["brew"] = json.loads(record.pop("brew_json"))
         results.append(record)
     return results
-
-
-@tool
-def log_brew_experiment(brew_log_json: str, recommendation_json: str) -> str:
-    """Save a brew log and its recommendation to the local experiment database.
-
-    Args:
-        brew_log_json: The BrewLog as JSON
-        recommendation_json: The Recommendation as JSON, with adjustment
-            {variable, direction, magnitude, rationale} and confidence
-    """
-    brew = BrewLog.model_validate_json(brew_log_json)
-    rec = Recommendation.model_validate_json(recommendation_json)
-    row_id = log_experiment(brew, rec)
-    return f"Logged experiment #{row_id}."
-
-
-@tool
-def get_recent_experiments(limit: int = 5) -> str:
-    """Fetch the most recent logged brew experiments, newest first.
-
-    Args:
-        limit: Maximum number of experiments to return
-    """
-    rows = recent_experiments(limit=limit)
-    if not rows:
-        return "No experiments logged yet."
-    lines = []
-    for row in rows:
-        lines.append(
-            f"#{row['id']} {row['ts'][:16]} defect={row['defect'] or '—'} "
-            f"→ {row['variable']} {row['direction']}"
-        )
-    return "\n".join(lines)

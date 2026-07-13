@@ -21,9 +21,13 @@ flowchart TD
     E --> G[assess_drawdown_time]
     E --> H[retrieve_recipe_notes<br/>tf-idf over recipes/*.md]
     E --> I[recommend_adjustment<br/>same rule engine as --no-llm]
-    E --> J[log_brew_experiment · SQLite]
+    E --> J[app.py logs the result<br/>SQLite, --no-log to skip]
     E --> K[OTLP 4318] --> L[Jaeger v2 / otel-lgtm]
 ```
+
+The experiment log is deliberately not an agent tool: whether a diagnosis gets
+persisted is an application decision, so `app.py` calls `log_experiment()` directly
+after each successful run rather than hoping the model remembers to.
 
 ## Observed trace shape
 
@@ -34,7 +38,7 @@ brewtrace.request                       55.2s   ← manual span (telemetry.py)
 │   brew.method=v60  brew.dose_g=16  brew.water_g=250  brew.ratio=15.62
 │   brew.temperature_c=94  brew.drawdown_seconds=225  taste.primary_defect=sour_thin
 └── invoke_agent Strands Agents         43.2s   ← Strands auto-instrumentation
-    │   gen_ai.agent.tools=[...6 tools]  gen_ai.request.model=qwen3
+    │   gen_ai.agent.tools=[...4 tools]  gen_ai.request.model=qwen3
     └── execute_event_loop_cycle        35.2s
         ├── chat                        35.2s   ← model call, token usage attrs
         ├── execute_tool calculate_brew_ratio     6ms

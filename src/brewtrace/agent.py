@@ -7,7 +7,6 @@ from strands.models.ollama import OllamaModel
 
 from brewtrace.models import BrewAdvice
 from brewtrace.tools.brew_math import assess_drawdown_time, calculate_brew_ratio
-from brewtrace.tools.experiment_log import get_recent_experiments, log_brew_experiment
 from brewtrace.tools.recipe_retriever import retrieve_recipe_notes
 from brewtrace.tools.recommendation import recommend_adjustment
 
@@ -41,6 +40,8 @@ def build_agent(
         temperature=temperature,
         keep_alive="10m",
     )
+    # Exactly the four tools the prompts prescribe. Experiment logging is a
+    # deterministic app-level concern (app.py), not a model decision.
     return Agent(
         model=model,
         system_prompt=SYSTEM_PROMPT,
@@ -50,8 +51,6 @@ def build_agent(
             assess_drawdown_time,
             retrieve_recipe_notes,
             recommend_adjustment,
-            log_brew_experiment,
-            get_recent_experiments,
         ],
     )
 

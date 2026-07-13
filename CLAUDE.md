@@ -41,7 +41,9 @@ same file.
   guards; priority grind > temperature > ratio > technique > bloom, ONE variable per
   brew). The showcase interaction: sour + stalled drawdown must NOT get "grind finer".
 - `tools/brew_math.py`, `tools/recipe_retriever.py` (stdlib tf-idf over `recipes/*.md`),
-  `tools/experiment_log.py` (sqlite3, `data/brewtrace.db`).
+  `tools/experiment_log.py` (sqlite3, `data/brewtrace.db`). The experiment log is NOT
+  an agent tool — app.py logs deterministically after each run (`--no-log` to skip);
+  the agent has exactly the 4 tools the prompts name.
 - `agent.py` — OllamaModel + system prompt. **Two-pass structured output**: prose answer
   first, then a tool-free extraction agent produces `BrewAdvice`. Small models fail
   forced structured output after tool loops; don't "simplify" this back to one pass.
