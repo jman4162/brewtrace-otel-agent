@@ -29,3 +29,7 @@ services:
       - "${GRAFANA_PORT:-3000}:3000" # Grafana UI (admin/admin)
       - "4317:4317"                  # OTLP gRPC
       - "4318:4318"                  # OTLP HTTP
+    volumes:
+      # Auto-provisioned BrewTrace dashboard (Dashboards → BrewTrace agent observability)
+      - ./grafana/brewtrace-dashboard.json:/otel-lgtm/grafana/conf/provisioning/dashboards/custom/brewtrace-dashboard.json:ro
+      - ./grafana/dashboards-provisioning.yaml:/otel-lgtm/grafana/conf/provisioning/dashboards/custom.yaml:ro
