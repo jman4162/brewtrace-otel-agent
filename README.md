@@ -98,7 +98,17 @@ time go" is: 99%+ model inference, ~10ms tools).
 ```bash
 uv run python -m brewtrace.evals.run_evals            # deterministic pipeline: must be 25/25
 uv run python -m brewtrace.evals.run_evals --agent    # live agent, threshold 80%
+
+# compare models (resumable; results saved to data/matrix/<model>.json)
+uv run python -m brewtrace.evals.matrix --models qwen3,llama3.1,llama3.2
+uv run python -m brewtrace.evals.matrix --report      # table from saved results
 ```
+
+Each agent-mode case also emits a `gen_ai.evaluation.result` span event with the
+OTel GenAI semconv attribute names (`gen_ai.evaluation.name`, `.score.value`,
+`.score.label`, `.explanation`) — parented to the request span, exactly as the
+spec recommends. Models without native tool calling are refused by the matrix
+runner rather than reported as misleading 0% rows.
 
 Agent-mode eval runs are traced with `eval.case_id` and `eval.passed` attributes, so
 every failure links to the full trace of what the model actually did. Measured with
@@ -113,8 +123,12 @@ judge, no Bedrock) scores rationale quality:
 ```bash
 docker compose --profile lgtm up -d     # Grafana LGTM stack (stop the jaeger profile first)
 uv run brewtrace --metrics "16g/250g V60, 94C, 3:45, sour and thin"
-# Grafana at http://localhost:3000 (admin/admin) → Explore → Prometheus
+# Grafana at http://localhost:3000 (admin/admin) → Dashboards → BrewTrace agent observability
 ```
+
+A dashboard is provisioned automatically (`grafana/brewtrace-dashboard.json`):
+recommendations by variable, eval pass rate by model, request-duration percentiles,
+time-to-first-token, token throughput, and per-tool call rates — no manual import.
 
 Strands emits its own instruments — `strands_event_loop_input_tokens` /
 `output_tokens` histograms, `strands_tool_call_count` / `success` / `error` counters,
