@@ -110,6 +110,23 @@ OTel GenAI semconv attribute names (`gen_ai.evaluation.name`, `.score.value`,
 spec recommends. Models without native tool calling are refused by the matrix
 runner rather than reported as misleading 0% rows.
 
+Measured results (July 2026, full analysis in
+[docs/model-comparison.md](docs/model-comparison.md)):
+
+| Model | Pass rate | Tool-use rate | Median latency |
+|---|---|---|---|
+| qwen3 | 88% (22/25) | 96% | 168s |
+| qwen3.5:9b (think=off) | 68% (17/25) | 96% | 17s |
+| qwen3.5:9b | 32% (8/25) | 100% | 103s |
+| llama3.1 | 8% (2/25) | 0% | 30s |
+| llama3.2 | 0% (0/25) | 92% | 9s |
+
+The spread is the point: all five models advertise the Ollama `tools` capability,
+and they fail in four different ways — llama3.1 ignores the tools, llama3.2 calls
+them and then ignores their answers, and default qwen3.5 thinks an answer without
+ever saying it (empty final message; fixed by disabling think mode). Every failure
+is one `eval.passed=false` trace query away.
+
 Agent-mode eval runs are traced with `eval.case_id` and `eval.passed` attributes, so
 every failure links to the full trace of what the model actually did. Measured with
 qwen3-8B (July 2026): **20/25** — and the traces sort the five failures into
@@ -174,7 +191,7 @@ variable per brew, with guards for the interactions (sour + stalled drawdown mus
 | strands-agents | 1.46.0 |
 | Jaeger | 2.19.0 |
 | grafana/otel-lgtm | latest (July 2026) |
-| Ollama model | qwen3 (8B); llama3.1 documented as a weaker-tool-calling comparison |
+| Ollama model | qwen3 (8B) default; qwen3.5/llama3.1/llama3.2 measured in the model comparison |
 | Python | 3.10+ |
 
 Exact dependency pins are in `pyproject.toml`/`uv.lock`. Tutorials rot at the
@@ -191,9 +208,10 @@ real observability problem, not a toy one.
 dependency-free, and every retrieval decision is legible in a trace. The tutorial is
 about observability, not embeddings.
 
-**Does it work with other Ollama models?** Any tool-capable model via `--model`. The
-eval harness quantifies how well a given model routes through tools — qwen3 walks all
-four tools reliably; llama3.1-8B usually skips them and answers from its priors.
+**Does it work with other Ollama models?** Any tool-capable model via `--model`, but
+the model-comparison table above shows how differently "tool-capable" models behave —
+from qwen3's 88% down to llama3.2's 0%. Run your candidate through
+`python -m brewtrace.evals.matrix` before trusting it.
 
 **Why is there a second small trace after each diagnosis?** Structured output runs as
 a separate tool-free extraction pass, because small local models routinely fail a

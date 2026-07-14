@@ -35,11 +35,59 @@ vibes-based listicle.
 
 ## Results
 
-<!-- MATRIX_TABLE -->
+Run: July 13, 2026 · strands-agents 1.46.0 · Apple Silicon, Ollama local.
+
+| Model | Pass rate | Tool-use rate | Median latency | Median tokens/case |
+|---|---|---|---|---|
+| qwen3 | 88% (22/25) | 96% | 168s | 4561 |
+| qwen3.5:9b (think=off) | 68% (17/25) | 96% | 17s | 4268 |
+| qwen3.5:9b | 32% (8/25) | 100% | 103s | 5507 |
+| llama3.1 | 8% (2/25) | 0% | 30s | 954 |
+| llama3.2 | 0% (0/25) | 92% | 9s | 3042 |
+
+Headline readings:
+
+- **Pass rate and tool-use rate are different axes.** llama3.2 calls tools on 92% of
+  cases and still passes zero; llama3.1 barely calls them at all. "Supports tool
+  calling" (the Ollama capability flag — all five have it) tells you almost nothing
+  about whether a model can execute a four-step tool workflow.
+- **qwen3's thinking buys accuracy at 10× the latency.** 88% at 168s median vs
+  qwen3.5-no-think's 68% at 17s. Which one you want depends entirely on whether a
+  human is waiting for the answer.
+- **Default qwen3.5 loses 36 points to an interop bug, not to reasoning.** See the
+  taxonomy below.
 
 ## Failure taxonomy
 
-<!-- FAILURE_NOTES -->
+Every failure below is one Jaeger/Tempo query away (`eval.passed=false`,
+`eval.model=<model>`), and each mode was diagnosed by reading traces, not by
+guessing:
+
+**llama3.1 — answers from its priors (20 of 23 failures).** Zero tool calls on 25/25
+cases; it writes plausible coffee advice from training data and ignores the
+prescribed workflow entirely. The two "passes" are cases where its priors happen to
+match the rule engine. This is the failure mode that makes agent observability
+non-optional: the answers *look* fine.
+
+**llama3.2 — routes but can't follow (23 of 25 failures).** The 3B model dutifully
+calls the tools (fast: 9s median), then recommends something other than what
+`recommend_adjustment` returned — usually a superficially related variable. Tool
+*calling* is not tool *following*.
+
+**qwen3.5 default — the silent thinking bug (16 of 17 failures).** The model calls
+the tools correctly, then ends its turn with an **empty final message**: the response
+reports ~200+ output tokens but zero content blocks — the tokens went to thinking
+that never surfaced as text. The extraction pass receives an empty answer and maps it
+to "no change". Disabling thinking (`think: false` via Ollama's API) eliminates the
+mode and doubles the pass rate. The trace made this legible: token counts on the
+`chat` span with no `gen_ai.choice` content is exactly what "the model thought but
+never spoke" looks like.
+
+**qwen3 / qwen3.5-no-think — genuine judgment errors (the remaining handful).** The
+same three buckets measured in the launch post: direction-semantics extraction misses
+("use more coffee" → ratio/*increase*), priority drift (a defensible second-choice
+adjustment over the rule table's first choice), and guessing when data is missing
+instead of asking for more.
 
 ## Caveats
 
