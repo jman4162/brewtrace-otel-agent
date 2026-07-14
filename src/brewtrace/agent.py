@@ -33,12 +33,22 @@ def build_agent(
     model_id: str = DEFAULT_MODEL,
     host: str = DEFAULT_HOST,
     temperature: float = 0.2,
+    think: bool | None = None,
 ) -> Agent:
+    """Assemble the diagnosis agent.
+
+    think: pass False to disable a model's thinking mode. qwen3.5's thinking
+    mode intermittently emits only reasoning tokens after a tool loop — the
+    final message arrives with zero content blocks (tokens billed, nothing
+    said). None leaves the model's default behavior alone.
+    """
+    extra = {"additional_args": {"think": think}} if think is not None else {}
     model = OllamaModel(
         host=host,
         model_id=model_id,
         temperature=temperature,
         keep_alive="10m",
+        **extra,
     )
     # Exactly the four tools the prompts prescribe. Experiment logging is a
     # deterministic app-level concern (app.py), not a model decision.

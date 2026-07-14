@@ -84,6 +84,7 @@ def run_agent(
     host: str,
     metrics: bool = False,
     quiet: bool = False,
+    think: bool | None = None,
 ) -> list[CaseRun]:
     from brewtrace.agent import build_agent, run_diagnosis
     from brewtrace.telemetry import brew_request_span, record_eval_result, setup_telemetry
@@ -91,7 +92,8 @@ def run_agent(
     setup_telemetry(otlp=True, metrics=metrics)
     runs: list[CaseRun] = []
     for case in cases:
-        agent = build_agent(model_id=model_id, host=host)  # fresh history per case
+        # Fresh history per case.
+        agent = build_agent(model_id=model_id, host=host, think=think)
         brew = parse_brew_log(case.input)
         started = time.perf_counter()
         extra = {"eval.case_id": case.id, "eval.model": model_id}

@@ -37,12 +37,13 @@ def model_supports_tools(model_id: str) -> bool:
     return out.returncode == 0 and "tools" in out.stdout
 
 
-def run_model(model_id: str, host: str, metrics: bool) -> dict:
+def run_model(model_id: str, host: str, metrics: bool, think: bool | None = None) -> dict:
     cases = load_cases()
-    print(f"=== {model_id}: {len(cases)} cases ===")
-    runs = run_agent(cases, model_id=model_id, host=host, metrics=metrics)
+    label = model_id if think is None else f"{model_id} (think={'on' if think else 'off'})"
+    print(f"=== {label}: {len(cases)} cases ===")
+    runs = run_agent(cases, model_id=model_id, host=host, metrics=metrics, think=think)
     record = {
-        "model": model_id,
+        "model": label,
         "completed_at": datetime.now(timezone.utc).isoformat(),
         "cases": [
             {
@@ -59,10 +60,17 @@ def run_model(model_id: str, host: str, metrics: bool) -> dict:
         ],
     }
     MATRIX_DIR.mkdir(parents=True, exist_ok=True)
-    path = MATRIX_DIR / f"{model_id.replace(':', '_').replace('/', '_')}.json"
+    path = MATRIX_DIR / f"{_slug(model_id, think)}.json"
     path.write_text(json.dumps(record, indent=2))
     print(f"saved {path}")
     return record
+
+
+def _slug(model_id: str, think: bool | None = None) -> str:
+    base = model_id.replace(":", "_").replace("/", "_")
+    if think is not None:
+        base += "_think-on" if think else "_think-off"
+    return base
 
 
 def _summary_row(record: dict) -> dict:
@@ -108,6 +116,12 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--models", help="comma-separated Ollama model ids to run")
     parser.add_argument("--host", default="http://localhost:11434")
     parser.add_argument("--metrics", action="store_true", help="emit brew.eval.results metrics")
+    parser.add_argument(
+        "--think",
+        choices=["default", "off"],
+        default="default",
+        help="disable thinking mode for this run (results saved under a separate slug)",
+    )
     parser.add_argument("--force", action="store_true", help="re-run models with saved results")
     parser.add_argument(
         "--report", action="store_true", help="print the table from saved JSON, run nothing"
@@ -125,9 +139,10 @@ def main(argv: list[str] | None = None) -> int:
     if not args.models:
         parser.error("--models is required unless --report")
 
+    think = False if args.think == "off" else None
     exit_code = 0
     for model_id in [m.strip() for m in args.models.split(",") if m.strip()]:
-        saved = MATRIX_DIR / f"{model_id.replace(':', '_').replace('/', '_')}.json"
+        saved = MATRIX_DIR / f"{_slug(model_id, think)}.json"
         if saved.exists() and not args.force:
             print(f"skip {model_id}: saved results exist ({saved}); use --force to re-run")
             continue
@@ -138,7 +153,7 @@ def main(argv: list[str] | None = None) -> int:
             )
             exit_code = 1
             continue
-        record = run_model(model_id, host=args.host, metrics=args.metrics)
+        record = run_model(model_id, host=args.host, metrics=args.metrics, think=think)
         row = _summary_row(record)
         print(
             f"{model_id}: {row['pass_rate']:.0%} pass, {row['tool_use_rate']:.0%} tool use, "
